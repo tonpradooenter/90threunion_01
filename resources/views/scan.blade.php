@@ -1,0 +1,8 @@
+@extends('layouts.site')
+@section('title', 'ตรวจ QR · 90th SISAT Reunion')
+@section('content')<section class="page-hero"><div class="shell"><div class="eyebrow">Staff Scanner</div><h1 class="page-title">ตรวจสิทธิ์ QR</h1><p class="muted">ใช้กล้องมือถือสแกน QR แล้วเปิดลิงก์นี้ หรือวางรหัสในช่องด้านล่าง</p></div></section><section class="section" style="padding-top:12px"><div class="shell" style="max-width:650px"><div class="panel"><form method="get" action="{{ route('scan.index') }}" class="form"><div class="field"><label for="code">ลิงก์หรือรหัส QR</label><input class="input" id="code" name="code" autocomplete="off" required></div><button class="btn" type="submit">ตรวจสอบ</button></form>
+@isset($code)<hr class="divider-line">@if(!$order)<div class="error">ไม่พบ QR นี้</div>@else<h2>รายการ #{{ $order->id }}</h2><p>{{ $order->kind === 'table' ? 'บัตรผ่านเข้างาน + อาหาร + คอนเสิร์ต' : 'รับของที่ระลึก' }}</p>@if($pass)<p><strong>ผู้ร่วมโต๊ะท่านที่ {{ $pass->guest_number }}</strong></p>@endif<p>{{ $order->items->first()?->label }}</p>
+@if($pass?->redeemed_at || (!$pass && $order->redeemed_at))<div class="error">ใช้สิทธิ์แล้ว เมื่อ {{ ($pass?->redeemed_at ?: $order->redeemed_at)->timezone('Asia/Bangkok')->format('d/m/Y H:i') }}</div>
+@elseif($order->status === 'approved' || ($pass && $order->status === 'redeemed'))<div class="success">ชำระเงินแล้ว · สิทธิ์ยังไม่ถูกใช้</div><form method="post" action="{{ route('scan.redeem', $code) }}">@csrf<button class="btn" type="submit">ยืนยันใช้สิทธิ์นี้</button></form>
+@else<div class="error">รายการนี้ยังไม่ผ่านการอนุมัติ</div>@endif @endif @endisset
+</div></div></section>@endsection
