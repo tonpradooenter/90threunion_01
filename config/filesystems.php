@@ -32,7 +32,7 @@ return [
 
         'private' => [
             'driver' => env('PRIVATE_STORAGE_DRIVER', 'local'),
-            'root' => storage_path('app/private'),
+            'root' => env('PRIVATE_STORAGE_DRIVER', 'local') === 'local' ? storage_path('app/private') : '',
             'key' => env('AWS_ACCESS_KEY_ID'),
             'secret' => env('AWS_SECRET_ACCESS_KEY'),
             'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),

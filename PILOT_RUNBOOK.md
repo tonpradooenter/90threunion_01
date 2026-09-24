@@ -22,7 +22,7 @@ Set these **Production environment** variables in Vercel after rotating the prev
 | `LINE_CLIENT_ID`, `LINE_CLIENT_SECRET`, `LINE_REDIRECT_URI` | Optional until LINE sign-in is activated; callback is `https://90threunion-01.vercel.app/auth/line/callback` |
 | `PAYMENT_BANK_NAME`, `PAYMENT_BANK_ACCOUNT`, `PAYMENT_BANK_HOLDER` | Leave empty during fake-slip testing. Never request a real transfer in pilot mode. |
 
-Do not run migrations as a container startup action. Run them once from a trusted release workstation using the **rotated owner/migrator** Neon URI. Grant a separate runtime role only the application DML and sequence rights it needs. Use `php artisan db:seed --class=DemoSeeder` once for 600 table and sample stock records.
+Do not run migrations as a container startup action. Run them once from a trusted release workstation using the **rotated owner/migrator direct (non-pooler)** Neon URI. The pooled URI failed Laravel DDL migrations in the pilot test. Grant a separate runtime role only the application DML and sequence rights it needs. Use `php artisan db:seed --class=DemoSeeder` once for 600 tables and sample stock records.
 
 The authenticated `GET /internal/expire` endpoint accepts `Authorization: Bearer <CRON_SECRET>` for a once-per-minute external scheduler. The app also performs a throttled expiry sweep when someone visits the shop or places an order, so an unvisited pilot will catch up on the next request. College production should use Laravel's scheduler instead.
 
