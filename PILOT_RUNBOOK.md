@@ -26,6 +26,8 @@ Do not run migrations as a container startup action. Run them once from a truste
 
 The authenticated `GET /internal/expire` endpoint accepts `Authorization: Bearer <CRON_SECRET>` for a once-per-minute external scheduler. The app also performs a throttled expiry sweep when someone visits the shop or places an order, so an unvisited pilot will catch up on the next request. College production should use Laravel's scheduler instead.
 
+Use `.vercelignore` or `vercel deploy --archive=tgz` for CLI deployments; uploading the local `vendor` and `node_modules` trees exceeds Vercel's file-count limit. The container rebuilds dependencies from lockfiles.
+
 ## First administrator
 
 1. Open `/register` and create the intended administrator's real account. Do not create a default `root` password.
