@@ -17,21 +17,18 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
+        $request->merge(['username' => mb_strtolower(trim((string) $request->input('username')))]);
         $data = $request->validate([
             'name' => 'required|string|max:120',
-            'identifier' => 'required|string|max:254',
+            'username' => ['required', 'string', 'min:4', 'max:50', 'regex:/^[a-zA-Z0-9._-]+$/', 'unique:users,username'],
             'password' => ['required', 'confirmed', Password::min(10)],
         ]);
-        $identifier = trim(mb_strtolower($data['identifier']));
-        $email = filter_var($identifier, FILTER_VALIDATE_EMAIL) ? $identifier : null;
-        $phone = $email ? null : preg_replace('/\D+/', '', $identifier);
-        if (!$email && !preg_match('/^0[0-9]{9}$/', $phone)) {
-            return back()->withErrors(['identifier' => 'กรุณากรอกอีเมลหรือเบอร์โทรศัพท์ 10 หลัก'])->withInput();
-        }
-        if (User::where($email ? 'email' : 'phone', $email ?: $phone)->exists()) {
-            return back()->withErrors(['identifier' => 'บัญชีนี้มีอยู่แล้ว กรุณาเข้าสู่ระบบ'])->withInput();
-        }
-        $user = User::create(['name' => $data['name'], 'email' => $email, 'phone' => $phone, 'password' => $data['password'], 'role' => 'customer']);
+        $user = User::create([
+            'name' => $data['name'],
+            'username' => $data['username'],
+            'password' => $data['password'],
+            'role' => 'customer',
+        ]);
         Auth::login($user);
         $request->session()->regenerate();
         return redirect()->route('account');
@@ -39,14 +36,12 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $data = $request->validate(['identifier' => 'required|string', 'password' => 'required|string']);
-        $identifier = trim(mb_strtolower($data['identifier']));
-        $field = filter_var($identifier, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
-        if (Auth::attempt([$field => $identifier, 'password' => $data['password']])) {
+        $data = $request->validate(['username' => 'required|string', 'password' => 'required|string']);
+        if (Auth::attempt(['username' => mb_strtolower(trim($data['username'])), 'password' => $data['password']])) {
             $request->session()->regenerate();
             return redirect()->intended(route('account'));
         }
-        return back()->withErrors(['identifier' => 'อีเมล/เบอร์โทรหรือรหัสผ่านไม่ถูกต้อง'])->onlyInput('identifier');
+        return back()->withErrors(['username' => 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'])->onlyInput('username');
     }
 
     public function logout(Request $request)

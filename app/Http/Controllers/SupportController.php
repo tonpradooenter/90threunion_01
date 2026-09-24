@@ -27,7 +27,8 @@ class SupportController extends Controller
             $customer = User::find((int) $matches[1]);
         } elseif ($identifier) {
             $phone = preg_replace('/\D+/', '', $identifier);
-            $customer = User::where('email', mb_strtolower($identifier))
+            $customer = User::where('username', mb_strtolower($identifier))
+                ->orWhere('email', mb_strtolower($identifier))
                 ->when($phone !== '', fn ($query) => $query->orWhere('phone', $phone))->first();
         } else {
             $customer = null;

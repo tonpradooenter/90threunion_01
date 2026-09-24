@@ -4,7 +4,7 @@ Laravel 13 + Filament 5 + PostgreSQL application for the 90th SISAT reunion. The
 
 ## Pilot flow
 
-1. A customer signs up with email or phone, or uses Google/LINE when OAuth credentials are configured.
+1. For this pilot, a customer signs up and signs in with a username and password. Google and LINE buttons are hidden until the later identity-linking flow is tested.
 2. The customer reserves a souvenir or one of 600 dining tables. A table includes a selected dining menu and concert admission for eight guests; dietary restrictions can be noted. Zones A–J each have 60 tables. The floor plan follows the supplied event PDF; its bottom-right repeated “G” label is interpreted as J.
 3. A reservation holds inventory for 30 minutes while waiting for a slip. Finance manually approves, requests a corrected slip, or rejects it. Rejection and expiry release inventory.
 4. Approval creates one pickup QR for a souvenir order or eight individual admission QR codes for a table. Gate staff scan admission; souvenir staff scan pickup. Each QR is redeemed online once.
@@ -25,7 +25,7 @@ php artisan db:seed --class=DemoSeeder
 php artisan serve
 ```
 
-`DemoSeeder` adds three sample products and 600 tables with placeholder prices. It adds **no users**. A real person signs up through `/register`, signs in, and generates a 10-minute proof code on `/account`; then a trusted operator runs `php artisan reunion:bootstrap-admin person@example.com PROOF_CODE` once. The super admin assigns roles to other registered accounts in `/admin/users`.
+`DemoSeeder` adds three sample products, two sample menus, and 600 tables with placeholder prices. It adds **no users**. The pilot super administrator is created once from a trusted release workstation with a random password stored only as a password hash in PostgreSQL. The super admin creates, edits, resets passwords for, and soft-deletes staff accounts in `/admin/users`. Customers register naturally through `/register`.
 
 Run `php artisan test` for the flow and role checks. The pilot uses SQLite locally only for development; the deployed database is PostgreSQL. Concurrent reservation behavior must also be checked against Neon before the pilot is considered verified.
 

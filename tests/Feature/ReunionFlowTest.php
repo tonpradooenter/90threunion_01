@@ -7,6 +7,8 @@ use App\Models\Product;
 use App\Models\User;
 use App\Models\Zone;
 use App\Models\DiningMenu;
+use App\Filament\Resources\Users\UserResource;
+use App\Filament\Resources\Users\Pages\ManageUsers;
 use App\Services\OrderService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -14,11 +16,74 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Hash;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class ReunionFlowTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_pilot_customer_registers_and_signs_in_with_username(): void
+    {
+        $this->post('/register', [
+            'name' => 'Pilot Customer',
+            'username' => 'Pilot.Guest',
+            'password' => 'sample-password-123',
+            'password_confirmation' => 'sample-password-123',
+        ])->assertRedirect(route('account'));
+
+        $customer = User::where('username', 'pilot.guest')->firstOrFail();
+        $this->assertSame('customer', $customer->role);
+        $this->post('/logout')->assertRedirect(route('home'));
+        $this->post('/login', ['username' => 'PILOT.GUEST', 'password' => 'sample-password-123'])
+            ->assertRedirect(route('account'));
+        $this->assertAuthenticatedAs($customer);
+    }
+
+    public function test_super_admin_can_manage_staff_but_not_themselves_or_another_super_admin(): void
+    {
+        $admin = User::factory()->create(['username' => 'pilot_admin', 'role' => 'super_admin']);
+        $staff = User::factory()->create(['username' => 'pilot_finance', 'role' => 'finance']);
+        $this->actingAs($admin);
+        $this->assertTrue(UserResource::canCreate());
+        $this->assertTrue(UserResource::canEdit($staff));
+        $this->assertTrue(UserResource::canDelete($staff));
+        $this->assertFalse(UserResource::canEdit($admin));
+        $this->assertFalse(UserResource::canDelete($admin));
+        $staff->delete();
+        $this->assertNull(User::where('username', 'pilot_finance')->first());
+        $this->assertNotNull(User::withTrashed()->where('username', 'pilot_finance')->first());
+    }
+
+    public function test_staff_login_screen_uses_username_instead_of_email(): void
+    {
+        $this->get('/admin/login')->assertOk()->assertSee('ชื่อผู้ใช้');
+    }
+
+    public function test_super_admin_creates_and_resets_staff_password_in_console(): void
+    {
+        $admin = User::factory()->create(['username' => 'sisat_admin', 'role' => 'super_admin']);
+        Livewire::actingAs($admin)->test(ManageUsers::class)->callAction('create', [
+            'name' => 'การเงินทดสอบ',
+            'username' => 'finance_demo',
+            'role' => 'finance',
+            'password' => 'first-password-123',
+        ])->assertHasNoErrors();
+
+        $staff = User::where('username', 'finance_demo')->firstOrFail();
+        $this->assertTrue(Hash::check('first-password-123', $staff->password));
+        Livewire::actingAs($admin)->test(ManageUsers::class)->callTableAction('edit', $staff, [
+            'name' => 'การเงินทดสอบ',
+            'username' => 'finance_demo',
+            'role' => 'finance',
+            'password' => 'second-password-123',
+        ])->assertHasNoErrors();
+        $this->assertTrue(Hash::check('second-password-123', $staff->fresh()->password));
+        Livewire::actingAs($admin)->test(ManageUsers::class)->callTableAction('delete', $staff)
+            ->assertHasNoErrors();
+        $this->assertSoftDeleted('users', ['id' => $staff->id]);
+    }
 
     public function test_table_cannot_be_double_booked_and_each_guest_has_one_redeemable_admission(): void
     {
