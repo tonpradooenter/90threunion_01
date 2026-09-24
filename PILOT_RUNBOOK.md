@@ -36,7 +36,7 @@ Use `.vercelignore` or `vercel deploy --archive=tgz` for CLI deployments; upload
 
 ## Test in order
 
-1. `table_admin`: open/close a zone and set its price in `/admin/zones`; see the A–J floor plan and select a table. A PDF source label repeats G at the bottom-right; the pilot uses J.
+1. `table_admin`: open/close a zone and set its price in `/admin/zones`; manage sample dining menus in `/admin/dining-menus`; see the A–J floor plan, select a table and menu, and enter dietary restrictions. A PDF source label repeats G at the bottom-right; the pilot uses J.
 2. `shop_admin`: create a souvenir, set price, receive stock through the **รับสินค้าเข้า** action, and open/close sale. Sold/held balances are read-only.
 3. `support`: find an existing customer via `/assist`, create an order, upload a test slip. The customer can see it in `/account`.
 4. `finance`: open `/finance`, inspect the private slip, request a correction, reject, or approve. The creator of an order cannot approve it themselves.

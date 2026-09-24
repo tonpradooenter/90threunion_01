@@ -5,7 +5,7 @@ Laravel 13 + Filament 5 + PostgreSQL application for the 90th SISAT reunion. The
 ## Pilot flow
 
 1. A customer signs up with email or phone, or uses Google/LINE when OAuth credentials are configured.
-2. The customer reserves a souvenir or one of 600 dining tables. A table includes meals and concert admission for eight guests. Zones A–J each have 60 tables. The floor plan follows the supplied event PDF; its bottom-right repeated “G” label is interpreted as J.
+2. The customer reserves a souvenir or one of 600 dining tables. A table includes a selected dining menu and concert admission for eight guests; dietary restrictions can be noted. Zones A–J each have 60 tables. The floor plan follows the supplied event PDF; its bottom-right repeated “G” label is interpreted as J.
 3. A reservation holds inventory for 30 minutes while waiting for a slip. Finance manually approves, requests a corrected slip, or rejects it. Rejection and expiry release inventory.
 4. Approval creates one pickup QR for a souvenir order or eight individual admission QR codes for a table. Gate staff scan admission; souvenir staff scan pickup. Each QR is redeemed online once.
 5. A support officer may create an order for an existing account. The customer sees the same order in their account.

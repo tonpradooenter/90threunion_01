@@ -21,8 +21,9 @@ class OrderController extends Controller
             'quantity' => 'required|integer|min:1|max:10',
             'client_key' => 'required|uuid',
             'dietary_notes' => 'nullable|string|max:1000',
+            'dining_menu_id' => 'nullable|integer|exists:dining_menus,id',
         ]);
-        $order = $service->place($request->user(), $request->user(), $data['kind'], $data['resource_id'], $data['quantity'], $data['client_key'], $data['dietary_notes'] ?? null);
+        $order = $service->place($request->user(), $request->user(), $data['kind'], $data['resource_id'], $data['quantity'], $data['client_key'], $data['dietary_notes'] ?? null, $data['dining_menu_id'] ?? null);
         return redirect()->route('orders.show', $order);
     }
 

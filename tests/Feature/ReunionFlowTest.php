@@ -6,6 +6,7 @@ use App\Models\BookablePlace;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\Zone;
+use App\Models\DiningMenu;
 use App\Services\OrderService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -110,9 +111,12 @@ class ReunionFlowTest extends TestCase
     {
         $customer = User::factory()->create();
         $shop = User::factory()->create(['role' => 'shop_admin']);
+        $tableAdmin = User::factory()->create(['role' => 'table_admin']);
         $this->actingAs($customer)->get('/admin/products')->assertForbidden();
         $this->actingAs($shop)->get('/admin/products')->assertOk();
         $this->actingAs($shop)->get('/admin/users')->assertForbidden();
+        $this->actingAs($tableAdmin)->get('/admin/dining-menus')->assertOk();
+        $this->actingAs($shop)->get('/admin/dining-menus')->assertForbidden();
     }
 
     public function test_first_admin_requires_proof_from_the_authenticated_account(): void
@@ -146,5 +150,24 @@ class ReunionFlowTest extends TestCase
         $support = User::factory()->create(['role' => 'support']);
         $this->actingAs($support)->get(route('assist.index', ['identifier' => '#'.$customer->id]))
             ->assertOk()->assertSee($customer->name);
+    }
+
+    public function test_table_order_requires_active_menu_and_preserves_the_chosen_name(): void
+    {
+        $customer = User::factory()->create();
+        Zone::create(['code' => 'A', 'price_satang' => 500000, 'is_active' => true, 'color' => '#e5a900', 'sort_order' => 1]);
+        $table = BookablePlace::create(['kind' => 'table', 'zone' => 'A', 'label' => '01', 'capacity' => 8, 'is_active' => true]);
+        $menu = DiningMenu::create(['name' => 'ชุดอาหารทดสอบ', 'is_active' => true, 'sort_order' => 1]);
+        $service = app(OrderService::class);
+        try {
+            $service->place($customer, $customer, 'table', $table->id, 1, (string) Str::uuid());
+            $this->fail('A table order without a menu was accepted.');
+        } catch (ValidationException) {
+            $this->assertDatabaseCount('orders', 0);
+        }
+        $order = $service->place($customer, $customer, 'table', $table->id, 1, (string) Str::uuid(), 'แพ้กุ้ง', $menu->id);
+        $menu->update(['name' => 'ชื่อใหม่']);
+        $this->assertSame('ชุดอาหารทดสอบ', $order->fresh()->dining_menu_label);
+        $this->assertSame('แพ้กุ้ง', $order->fresh()->dietary_notes);
     }
 }

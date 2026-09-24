@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BookablePlace;
 use App\Models\Product;
 use App\Models\Zone;
+use App\Models\DiningMenu;
 use App\Services\OrderService;
 use Illuminate\Http\Request;
 
@@ -33,6 +34,7 @@ class ShopController extends Controller
             'selectedZone' => $selectedZone,
             'places' => $places,
             'selectedTable' => $selectedTable,
+            'menus' => $kind === 'table' ? DiningMenu::where('is_active', true)->orderBy('sort_order')->get() : collect(),
         ]);
     }
 }

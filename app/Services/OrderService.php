@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\Zone;
+use App\Models\DiningMenu;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -16,10 +17,10 @@ use Illuminate\Validation\ValidationException;
 
 class OrderService
 {
-    public function place(User $customer, User $actor, string $kind, int $resourceId, int $quantity, string $key, ?string $dietaryNotes = null): Order
+    public function place(User $customer, User $actor, string $kind, int $resourceId, int $quantity, string $key, ?string $dietaryNotes = null, ?int $diningMenuId = null): Order
     {
         $this->sweepIfDue();
-        return DB::transaction(function () use ($customer, $actor, $kind, $resourceId, $quantity, $key, $dietaryNotes) {
+        return DB::transaction(function () use ($customer, $actor, $kind, $resourceId, $quantity, $key, $dietaryNotes, $diningMenuId) {
             User::whereKey($customer->id)->lockForUpdate()->firstOrFail();
             $existing = Order::where('client_key', $key)->first();
             if ($existing) {
@@ -30,6 +31,7 @@ class OrderService
                 throw ValidationException::withMessages(['order' => 'มีรายการที่ยังไม่เสร็จครบ 3 รายการแล้ว กรุณาดำเนินการรายการเดิมก่อน']);
             }
 
+            $menu = null;
             if ($kind === 'souvenir') {
                 $product = Product::whereKey($resourceId)->where('kind', $kind)->where('is_active', true)->lockForUpdate()->firstOrFail();
                 if ($product->available < $quantity) {
@@ -48,6 +50,15 @@ class OrderService
                 }
                 $unitPrice = $zone->price_satang;
                 $label = "โต๊ะ {$place->zone} {$place->label} ({$place->capacity} ท่าน รวมอาหารและคอนเสิร์ต)";
+                if ($diningMenuId) {
+                    $menu = DiningMenu::whereKey($diningMenuId)->where('is_active', true)->lockForUpdate()->first();
+                }
+                if (!$menu && DiningMenu::where('is_active', true)->exists()) {
+                    throw ValidationException::withMessages(['dining_menu_id' => 'กรุณาเลือกชุดอาหารที่เปิดให้จอง']);
+                }
+                if ($menu) {
+                    $label .= ' · '.$menu->name;
+                }
             } else {
                 abort(422, 'ประเภทการจองไม่ถูกต้อง');
             }
@@ -62,6 +73,8 @@ class OrderService
                 'included_guests' => $kind === 'table' ? $place->capacity : null,
                 'expires_at' => now()->addMinutes(30),
                 'dietary_notes' => $kind === 'table' ? $dietaryNotes : null,
+                'dining_menu_id' => $menu?->id,
+                'dining_menu_label' => $menu?->name,
             ]);
             $order->items()->create(['product_id' => $kind === 'souvenir' ? $resourceId : null, 'label' => $label, 'quantity' => $quantity, 'unit_price_satang' => $unitPrice]);
             if ($kind === 'table') {

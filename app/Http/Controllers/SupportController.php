@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\Zone;
+use App\Models\DiningMenu;
 use App\Services\OrderService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -37,6 +38,7 @@ class SupportController extends Controller
             'identifier' => $identifier,
             'products' => Product::where('kind', 'souvenir')->where('is_active', true)->get(),
             'zones' => Zone::where('is_active', true)->orderBy('sort_order')->get(),
+            'menus' => DiningMenu::where('is_active', true)->orderBy('sort_order')->get(),
             'zone' => $zone,
             'tables' => $zone ? BookablePlace::where('zone', $zone->code)->where('is_active', true)->whereNull('held_by_order_id')->whereNull('sold_by_order_id')->orderBy('label')->get() : collect(),
             'assistedOrders' => Order::where('actor_id', $request->user()->id)->whereColumn('actor_id', '!=', 'user_id')->latest()->limit(10)->get(),
@@ -53,9 +55,10 @@ class SupportController extends Controller
             'quantity' => 'required|integer|min:1|max:10',
             'client_key' => 'required|uuid',
             'dietary_notes' => 'nullable|string|max:1000',
+            'dining_menu_id' => 'nullable|integer|exists:dining_menus,id',
         ]);
         $customer = User::findOrFail($data['customer_id']);
-        $order = $service->place($customer, $request->user(), $data['kind'], $data['resource_id'], $data['quantity'], $data['client_key'], $data['dietary_notes'] ?? null);
+        $order = $service->place($customer, $request->user(), $data['kind'], $data['resource_id'], $data['quantity'], $data['client_key'], $data['dietary_notes'] ?? null, $data['dining_menu_id'] ?? null);
         return redirect()->route('orders.show', $order)->with('success', 'สร้างรายการให้ลูกค้าแล้ว รายการจะแสดงในบัญชีลูกค้าด้วย');
     }
 }
