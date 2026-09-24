@@ -22,7 +22,15 @@ class SupportController extends Controller
     {
         $this->authorizeRole($request);
         $identifier = trim((string) $request->query('identifier'));
-        $customer = $identifier ? User::where('email', mb_strtolower($identifier))->orWhere('phone', preg_replace('/\D+/', '', $identifier))->first() : null;
+        if (preg_match('/^#([1-9][0-9]*)$/', $identifier, $matches)) {
+            $customer = User::find((int) $matches[1]);
+        } elseif ($identifier) {
+            $phone = preg_replace('/\D+/', '', $identifier);
+            $customer = User::where('email', mb_strtolower($identifier))
+                ->when($phone !== '', fn ($query) => $query->orWhere('phone', $phone))->first();
+        } else {
+            $customer = null;
+        }
         $zone = Zone::where('is_active', true)->where('code', (string) $request->query('zone', 'A'))->first();
         return view('support', [
             'customer' => $customer,

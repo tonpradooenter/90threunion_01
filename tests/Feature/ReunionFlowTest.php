@@ -139,4 +139,12 @@ class ReunionFlowTest extends TestCase
         $product->update(['is_active' => false]);
         $this->get(route('products.image', $product))->assertNotFound();
     }
+
+    public function test_support_can_find_social_only_customer_by_id(): void
+    {
+        $customer = User::factory()->create(['email' => null, 'phone' => null, 'password' => null]);
+        $support = User::factory()->create(['role' => 'support']);
+        $this->actingAs($support)->get(route('assist.index', ['identifier' => '#'.$customer->id]))
+            ->assertOk()->assertSee($customer->name);
+    }
 }

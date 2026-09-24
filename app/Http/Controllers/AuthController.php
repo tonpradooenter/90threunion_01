@@ -79,6 +79,13 @@ class AuthController extends Controller
         } elseif ($linkUserId) {
             abort_unless(Auth::id() === (int) $linkUserId, 403);
             $user = Auth::user();
+            $linkedEmail = $provider === 'google' && filter_var(data_get($social->user, 'email_verified'), FILTER_VALIDATE_BOOLEAN)
+                ? mb_strtolower((string) $social->getEmail()) : null;
+            if ($linkedEmail && !$user->email && !User::where('email', $linkedEmail)->exists()) {
+                $user->update(['email' => $linkedEmail, 'email_verified_at' => now()]);
+            } elseif ($linkedEmail && $user->email === $linkedEmail && !$user->email_verified_at) {
+                $user->update(['email_verified_at' => now()]);
+            }
             DB::table('user_identities')->insert(['user_id' => $user->id, 'provider' => $provider, 'provider_id' => (string) $social->getId(), 'created_at' => now(), 'updated_at' => now()]);
         } else {
             $email = $social->getEmail() ? mb_strtolower($social->getEmail()) : null;
