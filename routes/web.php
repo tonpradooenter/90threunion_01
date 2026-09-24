@@ -57,3 +57,15 @@ Route::get('/internal/expire', function (Request $request, OrderService $service
     abort_unless(config('app.cron_secret') && hash_equals(config('app.cron_secret'), (string) $request->bearerToken()), 403);
     return response()->json(['expired' => $service->expire()]);
 })->middleware('throttle:5,1');
+
+Route::get('/internal/storage-status', function (Request $request) {
+    abort_unless($request->user()?->role === 'super_admin', 403);
+    $disk = config('filesystems.disks.private');
+    return response()->json([
+        'driver' => $disk['driver'],
+        'key_configured' => filled($disk['key']),
+        'secret_configured' => filled($disk['secret']),
+        'bucket_configured' => filled($disk['bucket']),
+        'endpoint_configured' => filled($disk['endpoint']),
+    ]);
+})->middleware('auth');

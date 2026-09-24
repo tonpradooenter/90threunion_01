@@ -45,7 +45,7 @@ class UserResource extends Resource
     public static function canEdit($record): bool
     {
         return static::canViewAny()
-            && $record->role !== 'super_admin'
+            && array_key_exists($record->role, self::STAFF_ROLES)
             && $record->id !== auth()->id();
     }
 

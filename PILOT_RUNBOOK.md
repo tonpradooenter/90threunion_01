@@ -16,7 +16,7 @@ Set these **Production environment** variables in Vercel after rotating the prev
 | `CACHE_STORE` / `QUEUE_CONNECTION` | `database` / `database` |
 | `PRIVATE_STORAGE_DRIVER` | `s3` |
 | `LIVEWIRE_TEMPORARY_FILE_UPLOAD_DISK` | `private` so Filament image uploads survive container changes; configure bucket CORS for the Vercel origin |
-| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`, `AWS_BUCKET`, `AWS_ENDPOINT`, `AWS_USE_PATH_STYLE_ENDPOINT` | Neon private Object Storage S3 values for the `uploads` bucket; verify endpoint and access with a test upload |
+| `NEON_STORAGE_ACCESS_KEY_ID`, `NEON_STORAGE_SECRET_ACCESS_KEY`, `NEON_STORAGE_REGION`, `NEON_STORAGE_BUCKET`, `NEON_STORAGE_ENDPOINT`, `NEON_STORAGE_PATH_STYLE` | Neon private Object Storage S3 values for the `uploads` bucket; verify endpoint and access with a test upload. The app retains `AWS_*` fallbacks for local development. |
 | `CRON_SECRET` | Separate random token for the authenticated expiry endpoint |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` | Optional until Google sign-in is activated; callback is `https://90threunion-01.vercel.app/auth/google/callback` |
 | `LINE_CLIENT_ID`, `LINE_CLIENT_SECRET`, `LINE_REDIRECT_URI` | Optional until LINE sign-in is activated; callback is `https://90threunion-01.vercel.app/auth/line/callback` |

@@ -45,12 +45,14 @@ class ReunionFlowTest extends TestCase
     {
         $admin = User::factory()->create(['username' => 'pilot_admin', 'role' => 'super_admin']);
         $staff = User::factory()->create(['username' => 'pilot_finance', 'role' => 'finance']);
+        $customer = User::factory()->create(['username' => 'pilot_customer', 'role' => 'customer']);
         $this->actingAs($admin);
         $this->assertTrue(UserResource::canCreate());
         $this->assertTrue(UserResource::canEdit($staff));
         $this->assertTrue(UserResource::canDelete($staff));
         $this->assertFalse(UserResource::canEdit($admin));
         $this->assertFalse(UserResource::canDelete($admin));
+        $this->assertFalse(UserResource::canEdit($customer));
         $staff->delete();
         $this->assertNull(User::where('username', 'pilot_finance')->first());
         $this->assertNotNull(User::withTrashed()->where('username', 'pilot_finance')->first());
@@ -59,6 +61,16 @@ class ReunionFlowTest extends TestCase
     public function test_staff_login_screen_uses_username_instead_of_email(): void
     {
         $this->get('/admin/login')->assertOk()->assertSee('ชื่อผู้ใช้');
+    }
+
+    public function test_storage_diagnostics_never_expose_credentials_to_customers(): void
+    {
+        $customer = User::factory()->create();
+        $admin = User::factory()->create(['role' => 'super_admin']);
+        $this->actingAs($customer)->get('/internal/storage-status')->assertForbidden();
+        $this->actingAs($admin)->get('/internal/storage-status')->assertOk()
+            ->assertJsonStructure(['driver', 'key_configured', 'secret_configured', 'bucket_configured', 'endpoint_configured'])
+            ->assertDontSee('AWS_SECRET_ACCESS_KEY');
     }
 
     public function test_super_admin_creates_and_resets_staff_password_in_console(): void
